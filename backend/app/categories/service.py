@@ -6,6 +6,7 @@ from app.categories.models import Category
 from app.categories.repository import CategoryRepository
 from app.categories.schemas import CategoryCreate, CategoryUpdate
 from app.shared.exceptions import AppException, NotFoundException
+from app.shared.utils import slugify
 
 
 class CategoryService:
@@ -21,7 +22,10 @@ class CategoryService:
         if await self.repository.get_by_name(category_in.name):
             raise AppException("Category with this name already exists", status_code=400)
 
-        category = Category(**category_in.model_dump())
+        category_data = category_in.model_dump()
+        category_data["slug"] = slugify(category_in.name)
+
+        category = Category(**category_data)
         return await self.repository.create(category)
 
     async def get_category(self, category_id: uuid.UUID) -> Category:
@@ -45,10 +49,15 @@ class CategoryService:
         if "name" in update_data and update_data["name"] != category.name:
             if await self.repository.get_by_name(update_data["name"]):
                 raise AppException("Category with this name already exists", status_code=400)
+            update_data["slug"] = slugify(update_data["name"])
 
         return await self.repository.update(category_id, **update_data)
 
     async def delete_category(self, category_id: uuid.UUID) -> bool:
-        """Soft delete a category."""
-        await self.get_category(category_id)
+        """
+        Soft delete a category.
+        Note: We should check if it has published quizzes before allowing delete.
+        """
+        category = await self.get_category(category_id)
+        # Check if category has quizzes (for now we allow delete, but SET NULL on FK)
         return await self.repository.soft_delete(category_id)

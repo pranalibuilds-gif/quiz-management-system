@@ -16,11 +16,12 @@ class Category(FullBase):
     __tablename__ = "categories"
 
     name: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    slug: Mapped[str] = mapped_column(String(60), unique=True, index=True, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
-    # Relationships
-    quizzes: Mapped[List["Quiz"]] = relationship(back_populates="category", cascade="all, delete-orphan")
+    # Relationships - No hard delete cascade due to soft-delete architecture
+    quizzes: Mapped[List["Quiz"]] = relationship(back_populates="category")
 
     def __repr__(self) -> str:
-        return f"<Category(name={self.name}, active={self.is_active})>"
+        return f"<Category(id={self.id}, name={self.name}, slug={self.slug}, active={self.is_active})>"

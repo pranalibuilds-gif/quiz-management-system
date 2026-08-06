@@ -95,7 +95,13 @@ async def update_quiz_status(
 ):
     """Admin only: Change quiz status (Publish/Archive)."""
     service = QuizService(session)
-    quiz = await service.update_status(quiz_id, status_in.status)
+    if status_in.status == QuizStatus.PUBLISHED:
+        quiz = await service.publish_quiz(quiz_id)
+    elif status_in.status == QuizStatus.ARCHIVED:
+        quiz = await service.archive_quiz(quiz_id)
+    else:
+        quiz = await service.update_status(quiz_id, status_in.status) # Fallback
+
     await session.commit()
 
     return APIResponse(

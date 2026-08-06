@@ -1,6 +1,7 @@
 import uuid
+from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
-from sqlalchemy import String, Integer, Float, Boolean, ForeignKey, Enum as SAEnum, Uuid
+from sqlalchemy import String, Integer, Float, Boolean, ForeignKey, Enum as SAEnum, Uuid, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base_model import FullBase
@@ -19,6 +20,7 @@ class Quiz(FullBase):
     __tablename__ = "quizzes"
 
     title: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
+    slug: Mapped[str] = mapped_column(String(120), unique=True, index=True, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     category_id: Mapped[Optional[uuid.UUID]] = mapped_column(
@@ -53,9 +55,13 @@ class Quiz(FullBase):
     # Assets
     thumbnail_path: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
+    # Lifecycle tracking
+    published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    archived_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
     # Relationships
     category: Mapped[Optional["Category"]] = relationship(back_populates="quizzes")
     questions: Mapped[List["Question"]] = relationship(back_populates="quiz", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
-        return f"<Quiz(id={self.id}, title={self.title}, status={self.status})>"
+        return f"<Quiz(id={self.id}, title={self.title}, status={self.status}, version={self.version})>"
