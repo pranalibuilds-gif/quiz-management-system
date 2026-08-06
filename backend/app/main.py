@@ -13,6 +13,8 @@ from app.shared.exceptions import AppException
 from app.api.v1 import health, auth, users
 from app.categories import api as categories
 from app.quizzes import api as quizzes
+from app.questions import api as questions
+from app.attempts import api as attempts
 
 # Setup logging
 setup_logging()
@@ -44,6 +46,8 @@ app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["Aut
 app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["Users"])
 app.include_router(categories.router, prefix=f"{settings.API_V1_STR}/categories", tags=["Categories"])
 app.include_router(quizzes.router, prefix=f"{settings.API_V1_STR}/quizzes", tags=["Quizzes"])
+app.include_router(questions.router, prefix=f"{settings.API_V1_STR}/quizzes", tags=["Questions"])
+app.include_router(attempts.router, prefix=f"{settings.API_V1_STR}/attempts", tags=["Attempts"])
 
 
 @app.get("/")

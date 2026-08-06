@@ -13,6 +13,7 @@ from app.shared.exceptions import AppException, NotFoundException
 from app.shared.enums import QuizStatus
 from app.core.config import settings, BASE_DIR
 from app.shared.utils import slugify
+from app.quizzes.validators import QuizValidator
 
 
 class QuizService:
@@ -95,17 +96,31 @@ class QuizService:
 
     async def publish_quiz(self, quiz_id: uuid.UUID) -> Quiz:
         """Business logic for publishing a quiz."""
-        quiz = await self.get_quiz(quiz_id)
+        # Use selectinload to load questions and options for validation
+        from sqlalchemy.orm import selectinload
+        from sqlalchemy import select
+        from app.questions.models import Question
 
-        # Validation rules
+        query = (
+            select(Quiz)
+            .where(Quiz.id == quiz_id)
+            .options(
+                selectinload(Quiz.questions).selectinload(Question.options)
+            )
+        )
+        result = await self.session.execute(query)
+        quiz = result.scalar_one_or_none()
+
+        if not quiz or quiz.deleted_at:
+            raise NotFoundException("Quiz not found")
+
+        # 1. Validation rules
         if quiz.status == QuizStatus.PUBLISHED:
             raise AppException("Quiz is already published", status_code=400)
         if quiz.status == QuizStatus.ARCHIVED:
             raise AppException("Cannot publish an archived quiz", status_code=400)
 
-        # Check if has questions (To be implemented in Phase 4)
-        # if len(quiz.questions) == 0:
-        #     raise AppException("Cannot publish a quiz without questions", status_code=400)
+        QuizValidator.validate_for_publish(quiz)
 
         return await self.repository.update(
             quiz_id,

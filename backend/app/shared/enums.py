@@ -13,9 +13,11 @@ class QuizStatus(str, Enum):
 
 
 class AttemptStatus(str, Enum):
+    CREATED = "CREATED"
     IN_PROGRESS = "IN_PROGRESS"
     SUBMITTED = "SUBMITTED"
     AUTO_SUBMITTED = "AUTO_SUBMITTED"
+    EXPIRED = "EXPIRED"
 
 
 class DifficultyLevel(str, Enum):

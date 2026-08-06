@@ -11,5 +11,7 @@ from app.users.models import User
 from app.auth.models import RefreshToken
 from app.categories.models import Category
 from app.quizzes.models import Quiz
+from app.questions.models import Question, Option
+from app.attempts.models import Attempt, AttemptQuestion, AttemptOption
 
 __all__ = ["Base"]
