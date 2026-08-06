@@ -11,6 +11,8 @@ from app.shared.exception_handlers import (
 )
 from app.shared.exceptions import AppException
 from app.api.v1 import health, auth, users
+from app.categories import api as categories
+from app.quizzes import api as quizzes
 
 # Setup logging
 setup_logging()
@@ -40,6 +42,8 @@ app.add_exception_handler(Exception, global_exception_handler)
 app.include_router(health.router, prefix=settings.API_V1_STR, tags=["Health"])
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["Authentication"])
 app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["Users"])
+app.include_router(categories.router, prefix=f"{settings.API_V1_STR}/categories", tags=["Categories"])
+app.include_router(quizzes.router, prefix=f"{settings.API_V1_STR}/quizzes", tags=["Quizzes"])
 
 
 @app.get("/")

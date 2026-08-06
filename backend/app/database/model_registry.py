@@ -9,5 +9,7 @@ from app.database.base_model import Base
 # Import all models here
 from app.users.models import User
 from app.auth.models import RefreshToken
+from app.categories.models import Category
+from app.quizzes.models import Quiz
 
 __all__ = ["Base"]
