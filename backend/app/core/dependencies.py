@@ -1,5 +1,5 @@
 from typing import Annotated
-from fastapi import Depends, Security
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.security import decode_token
 from app.database.session import get_db
-from app.users.models import User
 from app.users.repository import UserRepository
+from app.users.models import User
 from app.shared.exceptions import UnauthorizedException, ForbiddenException
 from app.shared.enums import UserRole
 
@@ -26,21 +26,24 @@ async def get_current_user(
     Dependency that validates the JWT and returns the current User object.
     """
     try:
-        payload = decode_token(token)
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise UnauthorizedException("Could not validate credentials")
+        token_data = decode_token(token)
+
+        # Ensure we are using an access token for general authentication
+        if token_data.type != "access":
+            raise UnauthorizedException("Invalid token type")
+
+        user_id = token_data.sub
     except JWTError:
+        raise UnauthorizedException("Could not validate credentials")
+    except Exception:
         raise UnauthorizedException("Could not validate credentials")
 
     repository = UserRepository(session)
     user = await repository.get_by_id(user_id)
 
-    if not user:
-        raise UnauthorizedException("User not found")
-
-    if not user.is_active:
-        raise UnauthorizedException("Inactive user")
+    # Enforce is_active and soft-delete rules
+    if not user or not user.is_active or user.deleted_at:
+        raise UnauthorizedException("User not found or account is inactive")
 
     return user
 

@@ -21,7 +21,7 @@ class User(FullBase):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
     role: Mapped[UserRole] = mapped_column(
-        SAEnum(UserRole),
+        SAEnum(UserRole, name="user_role"), # Explicit enum name for DB
         default=UserRole.STUDENT,
         nullable=False
     )
@@ -39,4 +39,4 @@ class User(FullBase):
     )
 
     def __repr__(self) -> str:
-        return f"<User(username={self.username}, role={self.role})>"
+        return f"<User(id={self.id}, username={self.username}, role={self.role}, active={self.is_active})>"
