@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
-from sqlalchemy import String, Integer, Float, ForeignKey, DateTime, Enum as SAEnum, Uuid
+from sqlalchemy import String, Integer, Float, ForeignKey, DateTime, Enum as SAEnum, Uuid, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database.base_model import TimestampedBase, IDMixin, Base
+from app.database.base_model import IDMixin, Base
 from app.shared.enums import AttemptStatus
 
 if TYPE_CHECKING:
@@ -32,7 +32,8 @@ class Attempt(Base, IDMixin):
     status: Mapped[AttemptStatus] = mapped_column(
         SAEnum(AttemptStatus, name="attempt_status"),
         default=AttemptStatus.IN_PROGRESS,
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     # Results
@@ -46,7 +47,7 @@ class Attempt(Base, IDMixin):
     # Timing
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
-    submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    submitted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     time_taken_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     random_seed: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -56,6 +57,17 @@ class Attempt(Base, IDMixin):
         back_populates="attempt",
         cascade="all, delete-orphan",
         order_by="AttemptQuestion.question_order"
+    )
+
+    # Unique constraint to prevent multiple active attempts per user per quiz
+    __table_args__ = (
+        Index(
+            "ix_active_attempt_unique",
+            "user_id",
+            "quiz_id",
+            unique=True,
+            postgresql_where=(status == AttemptStatus.IN_PROGRESS),
+        ),
     )
 
     def __repr__(self) -> str:

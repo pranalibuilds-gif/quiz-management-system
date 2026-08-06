@@ -15,6 +15,8 @@ from app.categories import api as categories
 from app.quizzes import api as quizzes
 from app.questions import api as questions
 from app.attempts import api as attempts
+from app.analytics import api as analytics
+from app.leaderboard import api as leaderboard
 
 # Setup logging
 setup_logging()
@@ -48,6 +50,8 @@ app.include_router(categories.router, prefix=f"{settings.API_V1_STR}/categories"
 app.include_router(quizzes.router, prefix=f"{settings.API_V1_STR}/quizzes", tags=["Quizzes"])
 app.include_router(questions.router, prefix=f"{settings.API_V1_STR}/quizzes", tags=["Questions"])
 app.include_router(attempts.router, prefix=f"{settings.API_V1_STR}/attempts", tags=["Attempts"])
+app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/analytics", tags=["Analytics"])
+app.include_router(leaderboard.router, prefix=f"{settings.API_V1_STR}/leaderboard", tags=["Leaderboard"])
 
 
 @app.get("/")

@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from app.quizzes.models import Quiz
 from app.questions.models import Question
 from app.attempts.models import Attempt, AttemptQuestion, AttemptOption
-from app.attempts.randomization import RandomizationService
+from app.attempts.services.randomization import RandomizationService
 from app.shared.enums import QuizStatus, AttemptStatus
 from app.shared.exceptions import AppException, NotFoundException
 

@@ -41,13 +41,15 @@ async def get_attempt_details(
     service = AttemptService(session)
     attempt = await service.get_attempt(attempt_id, user_id=current_user.id)
 
-    # Logic for hiding explanations if not submitted could go here,
-    # but Pydantic schema handles basic hidding for now.
+    # Check review status
+    from app.attempts.services.review import ReviewService
+    review_status = ReviewService.get_review_status(attempt)
 
     return APIResponse(
         success=True,
         message="Attempt details fetched",
-        data=attempt
+        data=attempt,
+        meta={"review_status": review_status}
     )
 
 
