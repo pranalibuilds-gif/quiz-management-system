@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.attempts.models import Attempt, AttemptQuestion, AttemptOption
 from app.quizzes.models import Quiz
 from app.users.models import User
-from app.shared.enums import AttemptStatus, UserRole
+from app.shared.enums import AttemptStatus, UserRole, QuizStatus
 
 
 class AnalyticsRepository:
@@ -17,22 +17,80 @@ class AnalyticsRepository:
         self.session = session
 
     async def get_system_overview(self) -> Dict[str, Any]:
-        """Calculates high-level system statistics."""
-        total_students = await self.session.execute(select(func.count(User.id)).where(User.role == UserRole.STUDENT))
-        total_quizzes = await self.session.execute(select(func.count(Quiz.id)))
-        total_attempts = await self.session.execute(select(func.count(Attempt.id)))
+        """Calculates high-level system statistics using efficient DB aggregates."""
+        # 1. Counts
+        students_q = select(func.count(User.id)).where(User.role == UserRole.STUDENT)
+        quizzes_q = select(func.count(Quiz.id))
+        published_q = select(func.count(Quiz.id)).where(Quiz.status == QuizStatus.PUBLISHED)
+        active_att_q = select(func.count(Attempt.id)).where(Attempt.status == AttemptStatus.IN_PROGRESS)
+        completed_att_q = select(func.count(Attempt.id)).where(Attempt.status.in_([AttemptStatus.SUBMITTED, AttemptStatus.AUTO_SUBMITTED]))
 
-        avg_score = await self.session.execute(
-            select(func.avg(Attempt.percentage))
-            .where(Attempt.status.in_([AttemptStatus.SUBMITTED, AttemptStatus.AUTO_SUBMITTED]))
+        # 2. Avg Percentage
+        avg_score_q = select(func.avg(Attempt.percentage)).where(
+            Attempt.status.in_([AttemptStatus.SUBMITTED, AttemptStatus.AUTO_SUBMITTED])
         )
 
+        # Execute all efficiently
+        total_students = (await self.session.execute(students_q)).scalar() or 0
+        total_quizzes = (await self.session.execute(quizzes_q)).scalar() or 0
+        published_quizzes = (await self.session.execute(published_q)).scalar() or 0
+        active_attempts = (await self.session.execute(active_att_q)).scalar() or 0
+        completed_attempts = (await self.session.execute(completed_att_q)).scalar() or 0
+        average_percentage = (await self.session.execute(avg_score_q)).scalar() or 0
+
         return {
-            "total_students": total_students.scalar() or 0,
-            "total_quizzes": total_quizzes.scalar() or 0,
-            "total_attempts": total_attempts.scalar() or 0,
-            "average_percentage": round(float(avg_score.scalar() or 0), 2)
+            "total_students": total_students,
+            "total_quizzes": total_quizzes,
+            "published_quizzes": published_quizzes,
+            "active_attempts": active_attempts,
+            "completed_attempts": completed_attempts,
+            "average_percentage": round(float(average_percentage), 2)
         }
+
+    async def get_recent_activity(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        Combines recent registrations, submissions, and quiz publications.
+        """
+        # 1. Recent Registrations
+        recent_users = (await self.session.execute(
+            select(User.id, User.full_name, User.created_at)
+            .where(User.role == UserRole.STUDENT)
+            .order_by(desc(User.created_at))
+            .limit(limit)
+        )).mappings().all()
+
+        # 2. Recent Submissions
+        recent_attempts = (await self.session.execute(
+            select(Attempt.id, Attempt.quiz_title, User.full_name, Attempt.submitted_at, Attempt.status)
+            .join(User, User.id == Attempt.user_id)
+            .where(Attempt.status.in_([AttemptStatus.SUBMITTED, AttemptStatus.AUTO_SUBMITTED]))
+            .order_by(desc(Attempt.submitted_at))
+            .limit(limit)
+        )).mappings().all()
+
+        activity = []
+
+        for u in recent_users:
+            activity.append({
+                "id": f"reg-{u['id']}",
+                "type": "REGISTRATION",
+                "title": "New Student Registered",
+                "description": f"{u['full_name']} joined the platform.",
+                "timestamp": u['created_at']
+            })
+
+        for a in recent_attempts:
+            activity.append({
+                "id": f"sub-{a['id']}",
+                "type": "SUBMISSION",
+                "title": "Quiz Submitted",
+                "description": f"{a['full_name']} completed '{a['quiz_title']}' ({a['status'].replace('_', ' ')})",
+                "timestamp": a['submitted_at']
+            })
+
+        # Sort combined activity by timestamp descending
+        activity.sort(key=lambda x: x["timestamp"], reverse=True)
+        return activity[:limit]
 
     async def get_quiz_performance(self, quiz_id: uuid.UUID) -> Dict[str, Any]:
         """Calculates performance metrics for a specific quiz."""

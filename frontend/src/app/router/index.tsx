@@ -10,6 +10,7 @@ import { QuizRunner } from '@/pages/QuizRunner';
 import { QuizResult } from '@/pages/QuizResult';
 import { MyAttempts } from '@/pages/MyAttempts';
 import { Leaderboard } from '@/pages/Leaderboard';
+import { AdminDashboard } from '@/pages/AdminDashboard';
 
 export const router = createBrowserRouter([
   {
@@ -70,10 +71,7 @@ export const router = createBrowserRouter([
         children: [
           {
             path: '/admin',
-            element: <div className="space-y-4">
-              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-              <p className="text-muted-foreground">Overview of system performance and activity.</p>
-            </div>,
+            element: <AdminDashboard />,
           },
           {
             path: '/admin/quizzes',
