@@ -99,3 +99,35 @@ class LeaderboardRepository:
             }
             for idx, row in enumerate(result.mappings())
         ]
+
+    async def get_user_global_rank(self, user_id: uuid.UUID) -> Optional[int]:
+        """
+        Calculate the global rank of a specific user.
+        """
+        # Subquery to calculate average percentage for all users
+        stats_sub = (
+            select(
+                User.id,
+                func.avg(Attempt.percentage).label("avg_percentage")
+            )
+            .join(Attempt, Attempt.user_id == User.id)
+            .where(Attempt.status.in_([AttemptStatus.SUBMITTED, AttemptStatus.AUTO_SUBMITTED]))
+            .group_by(User.id)
+            .subquery()
+        )
+
+        # Get the average for our user
+        user_avg_query = select(stats_sub.c.avg_percentage).where(stats_sub.c.id == user_id)
+        result = await self.session.execute(user_avg_query)
+        user_avg = result.scalar()
+
+        if user_avg is None:
+            return None
+
+        # Count how many users have a higher average percentage
+        rank_query = (
+            select(func.count(stats_sub.c.id))
+            .where(stats_sub.c.avg_percentage > user_avg)
+        )
+        higher_users_count = await self.session.execute(rank_query)
+        return higher_users_count.scalar() + 1

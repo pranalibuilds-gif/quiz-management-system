@@ -8,6 +8,8 @@ import { QuizBrowser } from '@/pages/QuizBrowser';
 import { QuizDetails } from '@/pages/QuizDetails';
 import { QuizRunner } from '@/pages/QuizRunner';
 import { QuizResult } from '@/pages/QuizResult';
+import { MyAttempts } from '@/pages/MyAttempts';
+import { Leaderboard } from '@/pages/Leaderboard';
 
 export const router = createBrowserRouter([
   {
@@ -50,11 +52,11 @@ export const router = createBrowserRouter([
           },
           {
             path: '/attempts',
-            element: <div>My Attempts</div>,
+            element: <MyAttempts />,
           },
           {
             path: '/leaderboard',
-            element: <div>Leaderboard</div>,
+            element: <Leaderboard />,
           },
         ]
       }

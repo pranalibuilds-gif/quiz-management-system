@@ -18,3 +18,7 @@ class LeaderboardService:
     async def get_global_rankings(self, limit: int = 10) -> List[Dict[str, Any]]:
         """Overall rankings across the platform."""
         return await self.repository.get_global_leaderboard(limit)
+
+    async def get_user_rank(self, user_id: uuid.UUID) -> Optional[int]:
+        """Get the global rank for a specific user."""
+        return await self.repository.get_user_global_rank(user_id)

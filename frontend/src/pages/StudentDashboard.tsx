@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { LayoutDashboard, FileText, CheckCircle, Clock } from 'lucide-react';
 import { attemptApi } from '@/features/quiz-runner/api';
 import { quizApi } from '@/features/quiz-browser/api';
+import { leaderboardApi } from '@/features/leaderboard/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -30,6 +31,12 @@ export const StudentDashboard: React.FC = () => {
     queryFn: () => quizApi.getQuizzes({ published_only: true })
   });
 
+  const { data: rankRes } = useQuery({
+    queryKey: ['my-rank'],
+    queryFn: leaderboardApi.getMyRank,
+    enabled: !!user
+  });
+
   if (isAttemptsLoading || isQuizzesLoading) return <LoadingState />;
   if (isAttemptsError || isQuizzesError) return <ErrorState onRetry={refetchAttempts} />;
 
@@ -54,8 +61,8 @@ export const StudentDashboard: React.FC = () => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Quizzes Attempted" value={stats.total} icon={FileText} />
-        <StatCard title="Completed" value={stats.completed} icon={CheckCircle} />
         <StatCard title="Average Score" value={`${stats.average}%`} icon={LayoutDashboard} />
+        <StatCard title="Global Rank" value={rankRes?.data ? `#${rankRes.data}` : 'N/A'} icon={Trophy} />
         <StatCard title="In Progress" value={stats.inProgress} icon={Clock} />
       </div>
 

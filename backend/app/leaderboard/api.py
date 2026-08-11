@@ -44,3 +44,19 @@ async def get_global_leaderboard(
         message="Global leaderboard fetched",
         data=rankings
     )
+
+
+@router.get("/me", response_model=APIResponse[Optional[int]])
+async def get_my_rank(
+    session: Annotated[AsyncSession, Depends(get_db)],
+    user: Annotated[User, Depends(get_current_user)]
+):
+    """Student: Get current global rank."""
+    service = LeaderboardService(session)
+    rank = await service.get_user_rank(user.id)
+
+    return APIResponse(
+        success=True,
+        message="Your rank fetched",
+        data=rank
+    )
