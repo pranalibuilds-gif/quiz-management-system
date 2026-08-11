@@ -45,13 +45,33 @@ class UserRepository(BaseRepository[User]):
         user = await self.get_by_email(email)
         return user is not None
 
-    async def list_students(self, skip: int = 0, limit: int = 100) -> Sequence[User]:
-        """Fetch all users with the STUDENT role."""
+    async def list_students(
+        self,
+        search: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        skip: int = 0,
+        limit: int = 100
+    ) -> Sequence[User]:
+        """Fetch all users with the STUDENT role with filtering."""
         query = (
             select(User)
             .where(User.role == UserRole.STUDENT)
-            .offset(skip)
-            .limit(limit)
+            .where(User.deleted_at == None)
         )
+
+        if search:
+            search_low = f"%{search.lower()}%"
+            query = query.where(
+                or_(
+                    User.full_name.ilike(search_low),
+                    User.username.ilike(search_low),
+                    User.email.ilike(search_low)
+                )
+            )
+
+        if is_active is not None:
+            query = query.where(User.is_active == is_active)
+
+        query = query.offset(skip).limit(limit).order_by(User.created_at.desc())
         result = await self.session.execute(query)
         return result.scalars().all()

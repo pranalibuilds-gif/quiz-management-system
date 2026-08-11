@@ -86,7 +86,23 @@ class QuizService:
         return await self.repository.update(quiz_id, **update_data)
 
     async def _create_new_version(self, old_quiz: Quiz, update_data: dict) -> Quiz:
-        """Internal helper to clone a quiz and increment its version."""
+        """
+        Internal helper to clone a quiz and its entire question bank for a new version.
+        This ensures historical versions remain immutable.
+        """
+        from app.questions.models import Question, Option
+        from sqlalchemy.orm import selectinload
+        from sqlalchemy import select
+
+        # 1. Fetch old quiz with full question/option tree
+        query = (
+            select(Quiz)
+            .where(Quiz.id == old_quiz.id)
+            .options(selectinload(Quiz.questions).selectinload(Question.options))
+        )
+        old_quiz_full = (await self.session.execute(query)).scalar_one()
+
+        # 2. Create New Quiz Header
         new_quiz = Quiz(
             title=update_data.get("title", old_quiz.title),
             description=update_data.get("description", old_quiz.description),
@@ -103,7 +119,31 @@ class QuizService:
             thumbnail_path=old_quiz.thumbnail_path,
             slug=f"{slugify(update_data.get('title', old_quiz.title))}-{uuid.uuid4().hex[:6]}"
         )
-        return await self.repository.create(new_quiz)
+        self.session.add(new_quiz)
+        await self.session.flush() # Generate new_quiz.id
+
+        # 3. Clone Questions & Options
+        for old_q in old_quiz_full.questions:
+            new_q = Question(
+                quiz_id=new_quiz.id,
+                text=old_q.text,
+                explanation=old_q.explanation,
+                marks=old_q.marks,
+                order=old_q.order
+            )
+            self.session.add(new_q)
+            await self.session.flush()
+
+            for old_opt in old_q.options:
+                new_opt = Option(
+                    question_id=new_q.id,
+                    text=old_opt.text,
+                    is_correct=old_opt.is_correct
+                )
+                self.session.add(new_opt)
+
+        await self.session.flush()
+        return new_quiz
 
     async def publish_quiz(self, quiz_id: uuid.UUID) -> Quiz:
         """Business logic for publishing a quiz."""

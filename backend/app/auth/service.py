@@ -109,3 +109,9 @@ class AuthService:
         query = delete(RefreshToken).where(RefreshToken.token == hashed_token)
         result = await self.session.execute(query)
         return result.rowcount > 0
+
+    async def revoke_user_sessions(self, user_id: uuid.UUID) -> bool:
+        """Revoke all active sessions for a specific user."""
+        query = delete(RefreshToken).where(RefreshToken.user_id == user_id)
+        result = await self.session.execute(query)
+        return result.rowcount > 0

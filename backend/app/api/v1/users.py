@@ -1,6 +1,6 @@
-from typing import Annotated, Sequence
+from typing import Annotated, Sequence, Optional
 import uuid
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
@@ -95,14 +95,54 @@ async def delete_my_account(
 async def list_students(
     session: Annotated[AsyncSession, Depends(get_db)],
     admin: Annotated[User, Depends(get_current_admin)],
-    skip: int = 0,
-    limit: int = 100
+    search: Optional[str] = Query(None),
+    is_active: Optional[bool] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100)
 ):
+    """Admin only: List students with filtering and searching."""
     service = UserService(session)
-    students = await service.list_students(skip, limit)
+    students = await service.list_students(search, is_active, skip, limit)
 
     return APIResponse(
         success=True,
         message="Students listed",
         data=students
+    )
+
+
+@router.patch("/{user_id}/status", response_model=APIResponse[UserRead])
+async def update_student_status(
+    session: Annotated[AsyncSession, Depends(get_db)],
+    admin: Annotated[User, Depends(get_current_admin)],
+    user_id: uuid.UUID,
+    is_active: bool = Query(...)
+):
+    """Admin only: Activate or deactivate a student account."""
+    service = UserService(session)
+    user = await service.update_status(user_id, is_active)
+    await session.commit()
+
+    return APIResponse(
+        success=True,
+        message=f"User {'activated' if is_active else 'deactivated'} successfully",
+        data=user
+    )
+
+
+@router.delete("/{user_id}", response_model=APIResponse[bool])
+async def delete_student(
+    session: Annotated[AsyncSession, Depends(get_db)],
+    admin: Annotated[User, Depends(get_current_admin)],
+    user_id: uuid.UUID
+):
+    """Admin only: Soft delete a student account."""
+    service = UserService(session)
+    success = await service.soft_delete_user(user_id)
+    await session.commit()
+
+    return APIResponse(
+        success=True,
+        message="User deleted successfully",
+        data=success
     )

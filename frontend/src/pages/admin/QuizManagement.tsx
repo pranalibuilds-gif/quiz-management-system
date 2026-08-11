@@ -15,7 +15,8 @@ import {
   Clock,
   BarChart,
   Trophy,
-  ExternalLink
+  ExternalLink,
+  BarChart3
 } from 'lucide-react';
 import { adminQuizApi, QuizAdminFilters } from '@/features/admin-quizzes/api';
 import { quizApi } from '@/features/quiz-browser/api';
@@ -205,6 +206,9 @@ export const QuizManagement: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
+                          <Link to={`/admin/quizzes/${quiz.id}/analytics`}>
+                             <Button variant="ghost" size="sm" title="View Analytics"><BarChart3 size={16} /></Button>
+                          </Link>
                           <Link to={`/admin/quizzes/${quiz.id}/edit`}>
                             <Button variant="ghost" size="sm" title="Edit Quiz"><Edit size={16} /></Button>
                           </Link>

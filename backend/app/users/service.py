@@ -81,9 +81,33 @@ class UserService:
     async def soft_delete_user(self, user_id: uuid.UUID) -> bool:
         """Deactivate and soft delete a user account."""
         user = await self.get_user(user_id)
+
+        # Revoke all sessions on deletion
+        from app.auth.service import AuthService
+        auth_service = AuthService(self.session)
+        await auth_service.revoke_user_sessions(user_id)
+
         await self.repository.update(user_id, is_active=False)
         return await self.repository.soft_delete(user_id)
 
-    async def list_students(self, skip: int = 0, limit: int = 100) -> Sequence[User]:
-        """Fetch students for admin view."""
-        return await self.repository.list_students(skip, limit)
+    async def update_status(self, user_id: uuid.UUID, is_active: bool) -> User:
+        """Activate or deactivate a user account."""
+        user = await self.get_user(user_id)
+
+        if not is_active:
+            # Revoke all sessions on deactivation
+            from app.auth.service import AuthService
+            auth_service = AuthService(self.session)
+            await auth_service.revoke_user_sessions(user_id)
+
+        return await self.repository.update(user_id, is_active=is_active)
+
+    async def list_students(
+        self,
+        search: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        skip: int = 0,
+        limit: int = 100
+    ) -> Sequence[User]:
+        """Fetch students for admin view with filtering."""
+        return await self.repository.list_students(search, is_active, skip, limit)

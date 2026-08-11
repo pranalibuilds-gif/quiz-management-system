@@ -14,6 +14,8 @@ import { AdminDashboard } from '@/pages/AdminDashboard';
 import { CategoryManagement } from '@/pages/admin/CategoryManagement';
 import { QuizManagement } from '@/pages/admin/QuizManagement';
 import { EditQuiz } from '@/pages/admin/EditQuiz';
+import { UserManagement } from '@/pages/admin/UserManagement';
+import { QuizAnalytics } from '@/pages/admin/QuizAnalytics';
 
 export const router = createBrowserRouter([
   {
@@ -89,12 +91,16 @@ export const router = createBrowserRouter([
             element: <EditQuiz />,
           },
           {
+            path: '/admin/quizzes/:id/analytics',
+            element: <QuizAnalytics />,
+          },
+          {
             path: '/admin/categories',
             element: <CategoryManagement />,
           },
           {
             path: '/admin/users',
-            element: <div>Manage Students</div>,
+            element: <UserManagement />,
           },
           {
             path: '/admin/settings',
