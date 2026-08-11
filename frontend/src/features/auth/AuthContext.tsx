@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthResponse } from '@/types/auth';
+import { authApi } from './api';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (data: AuthResponse) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -20,7 +21,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('access_token');
     if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        localStorage.clear();
+      }
     }
     setIsLoading(false);
   }, []);
@@ -32,10 +37,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(data.user);
   };
 
-  const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
+  const logout = async () => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (refreshToken) {
+      try {
+        // Attempt to revoke on server, but continue logout regardless
+        await authApi.logout(refreshToken);
+      } catch (e) {
+        console.error('Failed to revoke token on server', e);
+      }
+    }
+    localStorage.clear();
     setUser(null);
     window.location.href = '/login';
   };
