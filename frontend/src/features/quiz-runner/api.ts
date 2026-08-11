@@ -21,5 +21,10 @@ export const attemptApi = {
   submitAttempt: async (attemptId: string, answers: any) => {
     const response = await apiClient.post<APIResponse<Attempt>>(`/attempts/${attemptId}/submit`, { answers });
     return response.data;
+  },
+
+  saveAnswer: async (attemptId: string, questionId: string, optionId: string) => {
+    const response = await apiClient.patch<APIResponse<boolean>>(`/attempts/${attemptId}/questions/${questionId}/answer`, { option_id: optionId });
+    return response.data;
   }
 };

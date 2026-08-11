@@ -25,8 +25,11 @@ class AnalyticsRepository:
         active_att_q = select(func.count(Attempt.id)).where(Attempt.status == AttemptStatus.IN_PROGRESS)
         completed_att_q = select(func.count(Attempt.id)).where(Attempt.status.in_([AttemptStatus.SUBMITTED, AttemptStatus.AUTO_SUBMITTED]))
 
-        # 2. Avg Percentage
-        avg_score_q = select(func.avg(Attempt.percentage)).where(
+        # 2. Aggregates
+        stats_q = select(
+            func.avg(Attempt.percentage).label("avg_perc"),
+            func.sum(func.case((Attempt.percentage >= Attempt.passing_percentage, 1), else_=0)).label("pass_count")
+        ).where(
             Attempt.status.in_([AttemptStatus.SUBMITTED, AttemptStatus.AUTO_SUBMITTED])
         )
 
@@ -35,7 +38,11 @@ class AnalyticsRepository:
         published_quizzes = (await self.session.execute(published_q)).scalar() or 0
         active_attempts = (await self.session.execute(active_att_q)).scalar() or 0
         completed_attempts = (await self.session.execute(completed_att_q)).scalar() or 0
-        average_percentage = (await self.session.execute(avg_score_q)).scalar() or 0
+
+        stats_res = (await self.session.execute(stats_q)).mappings().first()
+        average_percentage = stats_res["avg_perc"] or 0
+        pass_count = stats_res["pass_count"] or 0
+        pass_rate = (pass_count / completed_attempts * 100) if completed_attempts > 0 else 0
 
         return {
             "total_students": total_students,
@@ -43,7 +50,8 @@ class AnalyticsRepository:
             "published_quizzes": published_quizzes,
             "active_attempts": active_attempts,
             "completed_attempts": completed_attempts,
-            "average_percentage": round(float(average_percentage), 2)
+            "average_percentage": round(float(average_percentage), 2),
+            "pass_rate": round(float(pass_rate), 2)
         }
 
     async def get_recent_activity(self, limit: int = 10) -> List[Dict[str, Any]]:

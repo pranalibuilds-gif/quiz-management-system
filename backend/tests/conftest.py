@@ -1,7 +1,7 @@
 import asyncio
 import os
 import pytest
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Generator
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -14,8 +14,7 @@ from app.database.base_model import Base
 from app.database.session import get_db
 from app.core.config import settings
 
-# Create test engine with StaticPool for better sqlite compatibility
-# (though we use Postgres, it's a good practice for speed)
+# Create test engine
 test_engine = create_async_engine(
     settings.DATABASE_URL,
     poolclass=StaticPool,
@@ -26,6 +25,12 @@ TestSessionLocal = async_sessionmaker(
     class_=AsyncSession,
     expire_on_commit=False,
 )
+
+@pytest.fixture(scope="session")
+def event_loop() -> Generator:
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
 @pytest.fixture(scope="session", autouse=True)
 async def setup_test_db():

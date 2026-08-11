@@ -12,6 +12,7 @@ class SystemOverview(BaseModel):
     active_attempts: int
     completed_attempts: int
     average_percentage: float
+    pass_rate: float
 
 
 class RecentActivity(BaseModel):

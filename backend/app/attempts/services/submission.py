@@ -7,6 +7,7 @@ from app.attempts.scoring import AnswerEvaluator, ScoreCalculator, ResultGenerat
 from app.attempts.schemas import QuizSubmission
 from app.shared.enums import AttemptStatus
 from app.shared.exceptions import AppException
+from app.core.logging import logger
 
 
 class SubmissionService:
@@ -59,5 +60,7 @@ class SubmissionService:
         attempt.unanswered_answers = unanswered
         attempt.submitted_at = now
         attempt.time_taken_seconds = int((now - attempt.started_at).total_seconds())
+
+        logger.info(f"Attempt submitted and scored: ID={attempt.id}, User={attempt.user_id}, Status={attempt.status}, Score={attempt.score}/{total_possible}")
 
         return attempt

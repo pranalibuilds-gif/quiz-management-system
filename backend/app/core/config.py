@@ -79,14 +79,5 @@ class Settings(BaseSettings):
     )
 
 
-# Note: This will raise a ValidationError if SECRET_KEY is not in .env
-try:
-    settings = Settings()
-except Exception as e:
-    # During initial local setup, we provide a dummy key if .env is missing
-    # to prevent the system from being completely un-runnable until the user acts.
-    if "SECRET_KEY" in str(e):
-        os.environ["SECRET_KEY"] = "temporary_dev_secret_key_change_it"
-        settings = Settings()
-    else:
-        raise e
+# Settings instance
+settings = Settings()

@@ -16,7 +16,7 @@ export const OptionList: React.FC<OptionListProps> = ({
   disabled
 }) => {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="radiogroup" aria-label="Answer options">
       {options.map((option, index) => {
         const isSelected = option.option_id === selectedOptionId;
         const label = String.fromCharCode(65 + index); // A, B, C, D
@@ -26,6 +26,8 @@ export const OptionList: React.FC<OptionListProps> = ({
             key={option.id}
             disabled={disabled}
             onClick={() => onSelect(option.option_id)}
+            role="radio"
+            aria-checked={isSelected}
             className={cn(
               "flex w-full items-center text-left p-4 rounded-xl border-2 transition-all group",
               isSelected

@@ -45,3 +45,34 @@ class AttemptService:
 
     async def list_user_attempts(self, user_id: uuid.UUID) -> Sequence[Attempt]:
         return await self.repository.list_by_user(user_id)
+
+    async def save_answer(
+        self,
+        attempt_id: uuid.UUID,
+        user_id: uuid.UUID,
+        question_id: uuid.UUID,
+        option_id: uuid.UUID
+    ) -> bool:
+        """
+        Saves a single answer during an active attempt.
+        """
+        attempt = await self.get_attempt(attempt_id, user_id)
+
+        if attempt.status != AttemptStatus.IN_PROGRESS:
+            raise AppException("Cannot save answer for a finished attempt", status_code=400)
+
+        if datetime.now(timezone.utc) > attempt.expires_at:
+             raise AppException("Attempt has expired", status_code=400)
+
+        # Update the specific AttemptQuestion snapshot
+        from app.attempts.models import AttemptQuestion
+        from sqlalchemy import update
+
+        query = (
+            update(AttemptQuestion)
+            .where(AttemptQuestion.attempt_id == attempt_id)
+            .where(AttemptQuestion.question_id == question_id)
+            .values(selected_option_id=option_id)
+        )
+        await self.session.execute(query)
+        return True

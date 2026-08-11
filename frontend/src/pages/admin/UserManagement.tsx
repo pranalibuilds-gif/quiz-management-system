@@ -23,7 +23,7 @@ export const UserManagement: React.FC = () => {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<UserFilters>({
     skip: 0,
-    limit: 20
+    limit: 10
   });
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -31,6 +31,12 @@ export const UserManagement: React.FC = () => {
     queryKey: ['admin-users', filters, searchTerm],
     queryFn: () => adminUserApi.list({ ...filters, search: searchTerm }),
   });
+
+  const currentPage = Math.floor(filters.skip! / filters.limit!) + 1;
+
+  const handlePageChange = (page: number) => {
+    setFilters(prev => ({ ...prev, skip: (page - 1) * prev.limit! }));
+  };
 
   const statusMutation = useMutation({
     mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
@@ -175,6 +181,33 @@ export const UserManagement: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination Controls */}
+      {students.length > 0 && (
+        <div className="flex items-center justify-between px-2">
+           <p className="text-sm text-muted-foreground font-medium">
+             Showing page {currentPage}
+           </p>
+           <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={students.length < filters.limit!}
+              >
+                Next
+              </Button>
+           </div>
+        </div>
+      )}
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start">
         <ShieldAlert className="h-5 w-5 text-blue-600 mr-3 shrink-0 mt-0.5" />

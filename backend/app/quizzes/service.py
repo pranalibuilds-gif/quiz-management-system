@@ -14,6 +14,7 @@ from app.shared.enums import QuizStatus, DifficultyLevel
 from app.core.config import settings, BASE_DIR
 from app.shared.utils import slugify
 from app.quizzes.validators import QuizValidator
+from app.core.logging import logger
 
 
 class QuizService:
@@ -88,11 +89,12 @@ class QuizService:
     async def _create_new_version(self, old_quiz: Quiz, update_data: dict) -> Quiz:
         """
         Internal helper to clone a quiz and its entire question bank for a new version.
-        This ensures historical versions remain immutable.
+        Optimized for atomicity and performance by manual UUID generation.
         """
         from app.questions.models import Question, Option
         from sqlalchemy.orm import selectinload
         from sqlalchemy import select
+        import uuid
 
         # 1. Fetch old quiz with full question/option tree
         query = (
@@ -102,8 +104,10 @@ class QuizService:
         )
         old_quiz_full = (await self.session.execute(query)).scalar_one()
 
-        # 2. Create New Quiz Header
+        # 2. Create New Quiz Header with pre-generated UUID
+        new_quiz_id = uuid.uuid4()
         new_quiz = Quiz(
+            id=new_quiz_id,
             title=update_data.get("title", old_quiz.title),
             description=update_data.get("description", old_quiz.description),
             category_id=update_data.get("category_id", old_quiz.category_id),
@@ -120,28 +124,30 @@ class QuizService:
             slug=f"{slugify(update_data.get('title', old_quiz.title))}-{uuid.uuid4().hex[:6]}"
         )
         self.session.add(new_quiz)
-        await self.session.flush() # Generate new_quiz.id
 
         # 3. Clone Questions & Options
         for old_q in old_quiz_full.questions:
+            new_q_id = uuid.uuid4()
             new_q = Question(
-                quiz_id=new_quiz.id,
+                id=new_q_id,
+                quiz_id=new_quiz_id,
                 text=old_q.text,
                 explanation=old_q.explanation,
                 marks=old_q.marks,
                 order=old_q.order
             )
             self.session.add(new_q)
-            await self.session.flush()
 
             for old_opt in old_q.options:
                 new_opt = Option(
-                    question_id=new_q.id,
+                    id=uuid.uuid4(),
+                    question_id=new_q_id,
                     text=old_opt.text,
                     is_correct=old_opt.is_correct
                 )
                 self.session.add(new_opt)
 
+        # One final flush/commit (handled by caller) to persist the entire tree
         await self.session.flush()
         return new_quiz
 
@@ -171,6 +177,8 @@ class QuizService:
 
         QuizValidator.validate_for_publish(quiz)
 
+        logger.info(f"Quiz published: ID={quiz.id}, Title='{quiz.title}', Version={quiz.version}")
+
         return await self.repository.update(
             quiz_id,
             status=QuizStatus.PUBLISHED,
@@ -180,6 +188,9 @@ class QuizService:
     async def archive_quiz(self, quiz_id: uuid.UUID) -> Quiz:
         """Transition a quiz to ARCHIVED status."""
         quiz = await self.get_quiz(quiz_id)
+
+        logger.info(f"Quiz archived: ID={quiz.id}, Title='{quiz.title}', Version={quiz.version}")
+
         return await self.repository.update(
             quiz_id,
             status=QuizStatus.ARCHIVED,

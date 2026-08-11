@@ -108,12 +108,22 @@ export const useQuizRunner = (attemptId: string, onComplete?: (id: string) => vo
     }, [attempt, isLoading, isError, queryError]);
 
     // 5. Navigation & Interaction
+    const saveAnswerMutation = useMutation({
+        mutationFn: ({ qId, oId }: { qId: string, oId: string }) =>
+            attemptApi.saveAnswer(attemptId, qId, oId),
+    });
+
     const handleSelectOption = (questionId: string, optionId: string) => {
         if (runnerState !== 'IN_PROGRESS') return;
+
+        // Optimistic UI update
         setSelectedAnswers(prev => ({
             ...prev,
             [questionId]: optionId
         }));
+
+        // Background save
+        saveAnswerMutation.mutate({ qId: questionId, oId: optionId });
     };
 
     const nextQuestion = () => {

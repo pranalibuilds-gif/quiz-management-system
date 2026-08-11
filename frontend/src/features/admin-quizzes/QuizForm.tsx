@@ -83,11 +83,11 @@ export const QuizForm: React.FC<QuizFormProps> = ({ initialData }) => {
       <div className="lg:col-span-2">
         <form id="quiz-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {isPublished && (
-            <div className="flex items-start p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm">
+            <div className="flex items-start p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm animate-in slide-in-from-top-2">
               <Info className="h-5 w-5 mr-3 shrink-0" />
               <div>
-                <p className="font-bold">Versioning Alert</p>
-                <p>This quiz is currently <strong>PUBLISHED</strong>. Saving any changes will automatically create <strong>Version {initialData.version + 1} (Draft)</strong>. The current version will remain available to students until you publish the new one.</p>
+                <p className="font-bold">Versioning Warning</p>
+                <p>This quiz is currently <strong>PUBLISHED</strong>. Any changes you save will not affect v{initialData.version} attempts. Instead, <strong>Version {initialData.version + 1} (Draft)</strong> will be created with your new content. You must publish the new version manually when ready.</p>
               </div>
             </div>
           )}

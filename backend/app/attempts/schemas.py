@@ -71,3 +71,7 @@ class AnswerSubmission(BaseModel):
 
 class QuizSubmission(BaseModel):
     answers: List[AnswerSubmission]
+
+
+class SingleAnswerUpdate(BaseModel):
+    option_id: uuid.UUID

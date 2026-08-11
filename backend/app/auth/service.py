@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +15,7 @@ from app.core.security import (
 from app.core.config import settings
 from app.shared.exceptions import UnauthorizedException
 from app.auth.schemas import LoginRequest, Token
+from app.core.logging import logger
 
 
 class AuthService:
@@ -30,7 +32,10 @@ class AuthService:
 
         # Enforce both is_active and soft-delete rules
         if not user or not user.is_active or user.deleted_at or not verify_password(login_in.password, user.hashed_password):
+            logger.warning(f"Failed login attempt for identifier: {login_in.identifier}")
             raise UnauthorizedException("Invalid credentials or inactive account")
+
+        logger.info(f"Successful login for user: {user.username} (ID: {user.id})")
 
         # Create tokens
         access_token = create_access_token(user.id, user.role)

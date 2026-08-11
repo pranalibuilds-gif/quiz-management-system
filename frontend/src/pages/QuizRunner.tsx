@@ -13,6 +13,8 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 export const QuizRunner: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const questionRef = React.useRef<HTMLHeadingElement>(null);
+
   const {
     attempt,
     runnerState,
@@ -26,6 +28,13 @@ export const QuizRunner: React.FC = () => {
     navigate(`/attempts/${attemptId}/result`, { replace: true });
   });
 
+  // Focus the question text when navigating
+  React.useEffect(() => {
+    if (currentQuestionIndex !== undefined && questionRef.current) {
+      questionRef.current.focus();
+    }
+  }, [currentQuestionIndex]);
+
   const answeredIndices = useMemo(() => {
     if (!attempt?.questions) return new Set<number>();
     const indices = new Set<number>();
@@ -38,7 +47,16 @@ export const QuizRunner: React.FC = () => {
   }, [attempt, selectedAnswers]);
 
   if (runnerState === 'LOADING') return <LoadingState message="Preparing your attempt..." />;
-  if (runnerState === 'ERROR') return <ErrorState message={error || 'Failed to load quiz'} />;
+  if (runnerState === 'ERROR') return (
+    <ErrorState
+      message={error || 'Failed to load quiz'}
+      extraAction={
+        <Button onClick={() => navigate('/dashboard')} variant="ghost">
+          Back to Dashboard
+        </Button>
+      }
+    />
+  );
   if (runnerState === 'COMPLETED') {
     // If finished, redirect to results page (Task 8.10)
     // For now, show a simple message
@@ -114,7 +132,11 @@ export const QuizRunner: React.FC = () => {
                  {currentQuestion.marks} Mark{currentQuestion.marks !== 1 ? 's' : ''}
                </span>
             </div>
-            <CardTitle className="text-xl md:text-2xl font-semibold leading-relaxed">
+            <CardTitle
+              ref={questionRef}
+              tabIndex={-1}
+              className="text-xl md:text-2xl font-semibold leading-relaxed outline-none focus:ring-0"
+            >
               {currentQuestion.question_text}
             </CardTitle>
           </CardHeader>

@@ -25,6 +25,7 @@ async def get_current_user(
     """
     Dependency that validates the JWT and returns the current User object.
     """
+    from jose import ExpiredSignatureError
     try:
         token_data = decode_token(token)
 
@@ -33,8 +34,12 @@ async def get_current_user(
             raise UnauthorizedException("Invalid token type")
 
         user_id = token_data.sub
+    except ExpiredSignatureError:
+        raise UnauthorizedException("Token has expired")
     except JWTError:
         raise UnauthorizedException("Could not validate credentials")
+    except UnauthorizedException:
+        raise
     except Exception:
         raise UnauthorizedException("Could not validate credentials")
 

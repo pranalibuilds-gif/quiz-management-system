@@ -1,11 +1,12 @@
 import uuid
-from typing import Annotated, List, Dict, Any
+from typing import Annotated, List, Dict, Any, Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
 from app.leaderboard.service import LeaderboardService
 from app.core.dependencies import get_current_user
+from app.users.models import User
 from app.shared.schemas import APIResponse
 
 router = APIRouter()

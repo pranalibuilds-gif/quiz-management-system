@@ -81,6 +81,26 @@ async def submit_quiz_attempt(
     )
 
 
+@router.patch("/{attempt_id}/questions/{question_id}/answer", response_model=APIResponse[bool])
+async def save_question_answer(
+    session: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    attempt_id: uuid.UUID,
+    question_id: uuid.UUID,
+    answer_in: SingleAnswerUpdate
+):
+    """Student: Save a single answer during an active attempt."""
+    service = AttemptService(session)
+    success = await service.save_answer(attempt_id, current_user.id, question_id, answer_in.option_id)
+    await session.commit()
+
+    return APIResponse(
+        success=True,
+        message="Answer saved",
+        data=success
+    )
+
+
 @router.get("/", response_model=APIResponse[List[AttemptRead]])
 async def list_my_attempts(
     session: Annotated[AsyncSession, Depends(get_db)],

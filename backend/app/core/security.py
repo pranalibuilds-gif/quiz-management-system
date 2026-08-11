@@ -90,7 +90,7 @@ def create_refresh_token(subject: uuid.UUID, role: UserRole) -> str:
 def decode_token(token: str) -> TokenData:
     """
     Decodes and validates a JWT token.
-    Raises JWTError on failure, which should be caught by the caller.
+    Raises JWTError or ExpiredSignatureError on failure.
     """
     payload = jwt.decode(
         token,
