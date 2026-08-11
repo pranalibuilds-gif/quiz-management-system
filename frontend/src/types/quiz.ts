@@ -1,5 +1,3 @@
-import { UserRole } from "./auth";
-
 export type QuizStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type DifficultyLevel = "EASY" | "MEDIUM" | "HARD";
 
@@ -33,6 +31,24 @@ export interface Quiz {
 
 export type AttemptStatus = "CREATED" | "IN_PROGRESS" | "SUBMITTED" | "AUTO_SUBMITTED" | "EXPIRED";
 
+export interface AttemptOption {
+  id: string;
+  option_id: string;
+  option_text: string;
+  display_order: number;
+}
+
+export interface AttemptQuestion {
+  id: string;
+  question_id: string;
+  question_text: string;
+  marks: number;
+  question_order: number;
+  selected_option_id?: string;
+  options: AttemptOption[];
+  explanation?: string;
+}
+
 export interface Attempt {
   id: string;
   quiz_id: string;
@@ -48,4 +64,12 @@ export interface Attempt {
   unanswered_answers?: number;
   submitted_at?: string;
   time_taken_seconds?: number;
+  questions?: AttemptQuestion[];
+}
+
+export interface QuizSubmission {
+  answers: {
+    question_id: string;
+    option_id: string;
+  }[];
 }

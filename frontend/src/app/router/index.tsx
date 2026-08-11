@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { StudentDashboard } from '@/pages/StudentDashboard';
 import { QuizBrowser } from '@/pages/QuizBrowser';
 import { QuizDetails } from '@/pages/QuizDetails';
+import { QuizRunner } from '@/pages/QuizRunner';
 
 export const router = createBrowserRouter([
   {
@@ -40,7 +41,7 @@ export const router = createBrowserRouter([
           },
           {
             path: '/attempts/:id/runner',
-            element: <div>Quiz Runner Page (Coming in 8.8)</div>,
+            element: <QuizRunner />,
           },
           {
             path: '/attempts',
