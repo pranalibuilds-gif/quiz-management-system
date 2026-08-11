@@ -1,6 +1,6 @@
-from typing import Annotated, Sequence, Optional
 import uuid
-from fastapi import APIRouter, Depends, status, File, UploadFile
+from typing import Annotated, Sequence, Optional, List
+from fastapi import APIRouter, Depends, status, File, UploadFile, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
@@ -9,6 +9,7 @@ from app.quizzes.schemas import QuizCreate, QuizRead, QuizUpdate, QuizStatusUpda
 from app.core.dependencies import get_current_admin, get_current_user
 from app.users.models import User
 from app.shared.schemas import APIResponse
+from app.shared.enums import QuizStatus, DifficultyLevel
 
 router = APIRouter()
 
@@ -31,17 +32,25 @@ async def create_quiz(
     )
 
 
-@router.get("/", response_model=APIResponse[Sequence[QuizRead]])
+@router.get("/", response_model=APIResponse[List[QuizRead]])
 async def list_quizzes(
     session: Annotated[AsyncSession, Depends(get_db)],
-    category_id: Optional[uuid.UUID] = None,
-    published_only: bool = True
+    category_id: Optional[uuid.UUID] = Query(None),
+    status: Optional[QuizStatus] = Query(None),
+    difficulty: Optional[DifficultyLevel] = Query(None),
+    published_only: bool = Query(True),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100)
 ):
-    """Public/Student: List published quizzes. Admin can see all via flag."""
+    """List quizzes with server-side filtering and pagination."""
     service = QuizService(session)
     quizzes = await service.list_quizzes(
         published_only=published_only,
-        category_id=category_id
+        category_id=category_id,
+        status=status,
+        difficulty=difficulty,
+        skip=skip,
+        limit=limit
     )
 
     return APIResponse(
@@ -74,11 +83,14 @@ async def update_quiz(
     quiz_id: uuid.UUID,
     quiz_in: QuizUpdate
 ):
-    """Admin only: Update quiz metadata or configuration."""
+    """Admin only: Update quiz metadata or configuration. Triggers versioning if published."""
     service = QuizService(session)
     quiz = await service.update_quiz(quiz_id, quiz_in)
     await session.commit()
 
+    # 201 Created if a new version was generated, 200 OK otherwise
+    # Since Pydantic model doesn't easily allow dynamic status codes in response_model,
+    # we'll keep 200 for now.
     return APIResponse(
         success=True,
         message="Quiz updated successfully",
@@ -100,7 +112,7 @@ async def update_quiz_status(
     elif status_in.status == QuizStatus.ARCHIVED:
         quiz = await service.archive_quiz(quiz_id)
     else:
-        quiz = await service.update_status(quiz_id, status_in.status) # Fallback
+        quiz = await service.update_status(quiz_id, status_in.status)
 
     await session.commit()
 

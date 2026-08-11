@@ -11,6 +11,8 @@ import { QuizResult } from '@/pages/QuizResult';
 import { MyAttempts } from '@/pages/MyAttempts';
 import { Leaderboard } from '@/pages/Leaderboard';
 import { AdminDashboard } from '@/pages/AdminDashboard';
+import { CategoryManagement } from '@/pages/admin/CategoryManagement';
+import { QuizManagement } from '@/pages/admin/QuizManagement';
 
 export const router = createBrowserRouter([
   {
@@ -75,11 +77,11 @@ export const router = createBrowserRouter([
           },
           {
             path: '/admin/quizzes',
-            element: <div>Manage Quizzes</div>,
+            element: <QuizManagement />,
           },
           {
             path: '/admin/categories',
-            element: <div>Manage Categories</div>,
+            element: <CategoryManagement />,
           },
           {
             path: '/admin/users',

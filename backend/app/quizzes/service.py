@@ -2,7 +2,7 @@ import os
 import uuid
 import shutil
 from datetime import datetime, timezone
-from typing import Sequence, Optional
+from typing import Sequence, Optional, List
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,7 +10,7 @@ from app.quizzes.models import Quiz
 from app.quizzes.repository import QuizRepository
 from app.quizzes.schemas import QuizCreate, QuizUpdate
 from app.shared.exceptions import AppException, NotFoundException
-from app.shared.enums import QuizStatus
+from app.shared.enums import QuizStatus, DifficultyLevel
 from app.core.config import settings, BASE_DIR
 from app.shared.utils import slugify
 from app.quizzes.validators import QuizValidator
@@ -45,13 +45,29 @@ class QuizService:
         self,
         published_only: bool = True,
         category_id: Optional[uuid.UUID] = None,
+        status: Optional[QuizStatus] = None,
+        difficulty: Optional[DifficultyLevel] = None,
         skip: int = 0,
         limit: int = 100
-    ) -> Sequence[Quiz]:
+    ) -> List[Quiz]:
         """List quizzes with filtering."""
         if published_only:
             return await self.repository.list_published(category_id, skip, limit)
-        return await self.repository.list_all(skip, limit)
+
+        # Admin view: Filter by all available parameters
+        from sqlalchemy import select
+        query = select(Quiz).where(Quiz.deleted_at == None)
+
+        if category_id:
+            query = query.where(Quiz.category_id == category_id)
+        if status:
+            query = query.where(Quiz.status == status)
+        if difficulty:
+            query = query.where(Quiz.difficulty == difficulty)
+
+        query = query.offset(skip).limit(limit).order_by(Quiz.created_at.desc())
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
 
     async def update_quiz(self, quiz_id: uuid.UUID, quiz_in: QuizUpdate) -> Quiz:
         """
@@ -62,10 +78,6 @@ class QuizService:
         update_data = quiz_in.model_dump(exclude_unset=True)
 
         if quiz.status == QuizStatus.PUBLISHED:
-            # Logic for creating a new version would go here.
-            # For MVP, we'll implement simple DRAFT-only updates if published.
-            # Transition: Move back to DRAFT or create a clone.
-            # Refined Rule: Updates to a published quiz create a new DRAFT version (cloned).
             return await self._create_new_version(quiz, update_data)
 
         if "title" in update_data and update_data["title"] != quiz.title:
@@ -91,12 +103,10 @@ class QuizService:
             thumbnail_path=old_quiz.thumbnail_path,
             slug=f"{slugify(update_data.get('title', old_quiz.title))}-{uuid.uuid4().hex[:6]}"
         )
-        # Note: We would also need to clone questions here in Phase 4
         return await self.repository.create(new_quiz)
 
     async def publish_quiz(self, quiz_id: uuid.UUID) -> Quiz:
         """Business logic for publishing a quiz."""
-        # Use selectinload to load questions and options for validation
         from sqlalchemy.orm import selectinload
         from sqlalchemy import select
         from app.questions.models import Question
@@ -114,7 +124,6 @@ class QuizService:
         if not quiz or quiz.deleted_at:
             raise NotFoundException("Quiz not found")
 
-        # 1. Validation rules
         if quiz.status == QuizStatus.PUBLISHED:
             raise AppException("Quiz is already published", status_code=400)
         if quiz.status == QuizStatus.ARCHIVED:
@@ -131,28 +140,28 @@ class QuizService:
     async def archive_quiz(self, quiz_id: uuid.UUID) -> Quiz:
         """Transition a quiz to ARCHIVED status."""
         quiz = await self.get_quiz(quiz_id)
-
         return await self.repository.update(
             quiz_id,
             status=QuizStatus.ARCHIVED,
             archived_at=datetime.now(timezone.utc)
         )
 
+    async def update_status(self, quiz_id: uuid.UUID, status: QuizStatus) -> Quiz:
+        """Direct status update (Fallback)."""
+        return await self.repository.update(quiz_id, status=status)
+
     async def upload_thumbnail(self, quiz_id: uuid.UUID, file: UploadFile) -> Quiz:
-        """Securely handle thumbnail uploads with type validation and cleanup."""
+        """Securely handle thumbnail uploads."""
         quiz = await self.get_quiz(quiz_id)
 
-        # 1. MIME Type Validation
         ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
         if file.content_type not in ALLOWED_TYPES:
             raise AppException("Only JPEG, PNG and WEBP images are allowed", status_code=400)
 
-        # 2. File Extension Validation
         ext = os.path.splitext(file.filename)[1].lower()
         if ext not in {".jpg", ".jpeg", ".png", ".webp"}:
              raise AppException("Invalid file extension", status_code=400)
 
-        # 3. Size Validation (Example: 2MB)
         MAX_SIZE = 2 * 1024 * 1024
         file.file.seek(0, os.SEEK_END)
         size = file.file.tell()
@@ -160,10 +169,8 @@ class QuizService:
         if size > MAX_SIZE:
              raise AppException("Image size exceeds 2MB limit", status_code=400)
 
-        # 4. Storage Logic
         os.makedirs(settings.QUIZ_THUMBNAIL_PATH, exist_ok=True)
 
-        # Cleanup old thumbnail if it exists and has a different extension
         if quiz.thumbnail_path:
              old_path = BASE_DIR / quiz.thumbnail_path
              if old_path.exists():
