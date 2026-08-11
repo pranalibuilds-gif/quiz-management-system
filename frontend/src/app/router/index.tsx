@@ -3,6 +3,9 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RegistrationPage } from '@/features/auth/RegistrationPage';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { StudentDashboard } from '@/pages/StudentDashboard';
+import { QuizBrowser } from '@/pages/QuizBrowser';
+import { QuizDetails } from '@/pages/QuizDetails';
 
 export const router = createBrowserRouter([
   {
@@ -25,14 +28,19 @@ export const router = createBrowserRouter([
         children: [
           {
             path: '/dashboard',
-            element: <div className="space-y-4">
-              <h1 className="text-3xl font-bold">Student Dashboard</h1>
-              <p className="text-muted-foreground">Welcome back! Ready to test your knowledge?</p>
-            </div>,
+            element: <StudentDashboard />,
           },
           {
             path: '/quizzes',
-            element: <div>Browse Quizzes</div>,
+            element: <QuizBrowser />,
+          },
+          {
+            path: '/quizzes/:id',
+            element: <QuizDetails />,
+          },
+          {
+            path: '/attempts/:id/runner',
+            element: <div>Quiz Runner Page (Coming in 8.8)</div>,
           },
           {
             path: '/attempts',
