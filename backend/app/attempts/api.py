@@ -1,11 +1,11 @@
 import uuid
-from typing import Annotated, List
+from typing import Annotated, List, Union
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
 from app.attempts.service import AttemptService
-from app.attempts.schemas import AttemptRead, AttemptFullRead, QuizSubmission
+from app.attempts.schemas import AttemptRead, AttemptFullRead, AttemptReviewRead, QuizSubmission
 from app.core.dependencies import get_current_user
 from app.users.models import User
 from app.shared.schemas import APIResponse
@@ -31,7 +31,7 @@ async def start_quiz_attempt(
     )
 
 
-@router.get("/{attempt_id}", response_model=APIResponse[AttemptFullRead])
+@router.get("/{attempt_id}", response_model=APIResponse[Union[AttemptReviewRead, AttemptFullRead]])
 async def get_attempt_details(
     session: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
@@ -45,9 +45,18 @@ async def get_attempt_details(
     from app.attempts.services.review import ReviewService
     review_status = ReviewService.get_review_status(attempt)
 
+    # Use appropriate schema based on review eligibility
+    if review_status["can_review"]:
+        return APIResponse(
+            success=True,
+            message="Detailed attempt review fetched",
+            data=attempt,
+            meta={"review_status": review_status}
+        )
+
     return APIResponse(
         success=True,
-        message="Attempt details fetched",
+        message="Attempt details fetched (Review locked)",
         data=attempt,
         meta={"review_status": review_status}
     )

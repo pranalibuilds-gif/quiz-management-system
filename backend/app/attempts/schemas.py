@@ -14,6 +14,10 @@ class AttemptOptionRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AttemptOptionReview(AttemptOptionRead):
+    is_correct: bool
+
+
 class AttemptQuestionRead(BaseModel):
     id: uuid.UUID
     question_id: uuid.UUID
@@ -23,10 +27,12 @@ class AttemptQuestionRead(BaseModel):
     selected_option_id: Optional[uuid.UUID] = None
     options: List[AttemptOptionRead]
 
-    # explanation is hidden until after 24h/review period
-    explanation: Optional[str] = None
-
     model_config = ConfigDict(from_attributes=True)
+
+
+class AttemptQuestionReview(AttemptQuestionRead):
+    explanation: Optional[str] = None
+    options: List[AttemptOptionReview]
 
 
 class AttemptRead(BaseModel):
@@ -42,12 +48,20 @@ class AttemptRead(BaseModel):
     score: Optional[float] = None
     percentage: Optional[float] = None
     correct_answers: Optional[int] = None
+    incorrect_answers: Optional[int] = None
+    unanswered_answers: Optional[int] = None
+    submitted_at: Optional[datetime] = None
+    time_taken_seconds: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class AttemptFullRead(AttemptRead):
     questions: List[AttemptQuestionRead]
+
+
+class AttemptReviewRead(AttemptRead):
+    questions: List[AttemptQuestionReview]
 
 
 class AnswerSubmission(BaseModel):

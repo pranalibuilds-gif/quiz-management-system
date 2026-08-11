@@ -7,6 +7,7 @@ import { StudentDashboard } from '@/pages/StudentDashboard';
 import { QuizBrowser } from '@/pages/QuizBrowser';
 import { QuizDetails } from '@/pages/QuizDetails';
 import { QuizRunner } from '@/pages/QuizRunner';
+import { QuizResult } from '@/pages/QuizResult';
 
 export const router = createBrowserRouter([
   {
@@ -42,6 +43,10 @@ export const router = createBrowserRouter([
           {
             path: '/attempts/:id/runner',
             element: <QuizRunner />,
+          },
+          {
+            path: '/attempts/:id/result',
+            element: <QuizResult />,
           },
           {
             path: '/attempts',

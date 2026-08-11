@@ -7,7 +7,7 @@ import { ApiError } from '@/lib/api/error';
 
 export type RunnerState = 'IDLE' | 'LOADING' | 'IN_PROGRESS' | 'SUBMITTING' | 'COMPLETED' | 'ERROR';
 
-export const useQuizRunner = (attemptId: string) => {
+export const useQuizRunner = (attemptId: string, onComplete?: (id: string) => void) => {
     const [runnerState, setRunnerState] = useState<RunnerState>('IDLE');
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
@@ -35,8 +35,9 @@ export const useQuizRunner = (attemptId: string) => {
             isSubmittingRef.current = true;
             setRunnerState('SUBMITTING');
         },
-        onSuccess: () => {
+        onSuccess: (response) => {
             setRunnerState('COMPLETED');
+            if (onComplete) onComplete(response.data.id);
         },
         onError: (err: ApiError) => {
             setError(err.message);

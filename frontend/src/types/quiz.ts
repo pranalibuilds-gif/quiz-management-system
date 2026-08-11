@@ -36,6 +36,7 @@ export interface AttemptOption {
   option_id: string;
   option_text: string;
   display_order: number;
+  is_correct?: boolean; // Only present in review
 }
 
 export interface AttemptQuestion {
@@ -46,7 +47,13 @@ export interface AttemptQuestion {
   question_order: number;
   selected_option_id?: string;
   options: AttemptOption[];
-  explanation?: string;
+  explanation?: string; // Only present in review
+}
+
+export interface ReviewStatus {
+  can_review: boolean;
+  available_at: string;
+  hours_remaining: number;
 }
 
 export interface Attempt {

@@ -22,7 +22,9 @@ export const QuizRunner: React.FC = () => {
     timeLeft,
     error,
     actions
-  } = useQuizRunner(id!);
+  } = useQuizRunner(id!, (attemptId) => {
+    navigate(`/attempts/${attemptId}/result`, { replace: true });
+  });
 
   const answeredIndices = useMemo(() => {
     if (!attempt?.questions) return new Set<number>();

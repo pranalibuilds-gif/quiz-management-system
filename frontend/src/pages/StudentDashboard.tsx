@@ -1,4 +1,4 @@
-import React from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { LayoutDashboard, FileText, CheckCircle, Clock } from 'lucide-react';
 import { attemptApi } from '@/features/quiz-runner/api';
@@ -71,10 +71,12 @@ export const StudentDashboard: React.FC = () => {
               <ul className="space-y-4">
                 {attempts.slice(0, 5).map((attempt) => (
                   <li key={attempt.id} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
-                    <div>
-                      <p className="font-medium">{attempt.quiz_title}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(attempt.started_at).toLocaleDateString()}</p>
-                    </div>
+                    <Link to={`/attempts/${attempt.id}/result`} className="hover:opacity-80">
+                      <div>
+                        <p className="font-medium">{attempt.quiz_title}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(attempt.started_at).toLocaleDateString()}</p>
+                      </div>
+                    </Link>
                     <div className="text-right">
                       <p className="font-semibold">{attempt.score ?? 0} pts</p>
                       <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${
