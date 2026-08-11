@@ -13,6 +13,7 @@ import { Leaderboard } from '@/pages/Leaderboard';
 import { AdminDashboard } from '@/pages/AdminDashboard';
 import { CategoryManagement } from '@/pages/admin/CategoryManagement';
 import { QuizManagement } from '@/pages/admin/QuizManagement';
+import { EditQuiz } from '@/pages/admin/EditQuiz';
 
 export const router = createBrowserRouter([
   {
@@ -78,6 +79,14 @@ export const router = createBrowserRouter([
           {
             path: '/admin/quizzes',
             element: <QuizManagement />,
+          },
+          {
+            path: '/admin/quizzes/create',
+            element: <EditQuiz />,
+          },
+          {
+            path: '/admin/quizzes/:id/edit',
+            element: <EditQuiz />,
           },
           {
             path: '/admin/categories',

@@ -1,6 +1,7 @@
 import apiClient from '@/lib/api/client';
 import { APIResponse } from '@/types/auth';
 import { Quiz, QuizStatus, DifficultyLevel } from '@/types/quiz';
+import { QuizCreateRequest, QuizUpdateRequest } from './types';
 
 export interface QuizAdminFilters {
   category_id?: string;
@@ -38,6 +39,25 @@ export const adminQuizApi = {
 
   delete: async (id: string) => {
     const response = await apiClient.delete<APIResponse<boolean>>(`/quizzes/${id}`);
+    return response.data;
+  },
+
+  create: async (data: QuizCreateRequest) => {
+    const response = await apiClient.post<APIResponse<Quiz>>('/quizzes/', data);
+    return response.data;
+  },
+
+  update: async (id: string, data: QuizUpdateRequest) => {
+    const response = await apiClient.patch<APIResponse<Quiz>>(`/quizzes/${id}`, data);
+    return response.data;
+  },
+
+  uploadThumbnail: async (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<APIResponse<Quiz>>(`/quizzes/${id}/thumbnail`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
     return response.data;
   }
 };

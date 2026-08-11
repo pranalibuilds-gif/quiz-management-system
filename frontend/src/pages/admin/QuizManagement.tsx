@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
@@ -13,7 +14,8 @@ import {
   MoreVertical,
   Clock,
   BarChart,
-  Trophy
+  Trophy,
+  ExternalLink
 } from 'lucide-react';
 import { adminQuizApi, QuizAdminFilters } from '@/features/admin-quizzes/api';
 import { quizApi } from '@/features/quiz-browser/api';
@@ -75,7 +77,7 @@ export const QuizManagement: React.FC = () => {
           </h1>
           <p className="text-muted-foreground">Manage assessmet metadata, lifecycle, and questions.</p>
         </div>
-        <Button onClick={() => {}}>
+        <Button onClick={() => navigate('/admin/quizzes/create')}>
           <Plus className="mr-2 h-4 w-4" />
           Create Quiz
         </Button>
@@ -203,7 +205,9 @@ export const QuizManagement: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" title="Edit Metadata"><Edit size={16} /></Button>
+                          <Link to={`/admin/quizzes/${quiz.id}/edit`}>
+                            <Button variant="ghost" size="sm" title="Edit Quiz"><Edit size={16} /></Button>
+                          </Link>
                           {quiz.status === 'DRAFT' && (
                             <Button
                               variant="ghost"
