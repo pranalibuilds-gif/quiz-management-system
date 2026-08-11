@@ -27,3 +27,9 @@ dev-dependencies = [
     "ruff>=0.4.9",
     "pyright>=1.1.368",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = "test_*.py"
+asyncio_default_fixture_loop_scope = "session"
