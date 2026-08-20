@@ -155,3 +155,10 @@ cython_debug/
 # Project specific
 backend/uploads/*
 !backend/uploads/.gitkeep
+node_modules/
+dist/
+*.log
+build_output*.txt
+backend/requirements-install.txt
+backend/scripts/
+UI.png

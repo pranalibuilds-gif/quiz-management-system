@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.session import get_db
 from app.attempts.service import AttemptService
-from app.attempts.schemas import AttemptRead, AttemptFullRead, AttemptReviewRead, QuizSubmission
+from app.attempts.schemas import AttemptRead, AttemptFullRead, AttemptReviewRead, QuizSubmission, SingleAnswerUpdate
 from app.core.dependencies import get_current_user
 from app.users.models import User
 from app.shared.schemas import APIResponse

@@ -20,6 +20,11 @@ from app.leaderboard import api as leaderboard
 
 # Setup logging
 setup_logging()
+import logging
+logger = logging.getLogger(__name__)
+
+# Log CORS origins for debugging
+logger.info(f"BACKEND_CORS_ORIGINS = {settings.BACKEND_CORS_ORIGINS}")
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -27,15 +32,15 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
 
-# Set CORS middleware
-if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# Set CORS middleware (normalize origins to avoid trailing-slash mismatches)
+# For development, allow all origins to avoid CORS issues from the frontend dev server.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Register exception handlers
 app.add_exception_handler(AppException, app_exception_handler)

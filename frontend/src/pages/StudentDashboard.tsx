@@ -1,6 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { LayoutDashboard, FileText, CheckCircle, Clock } from 'lucide-react';
+import { LayoutDashboard, FileText, CheckCircle, Clock, Trophy } from 'lucide-react';
 import { attemptApi } from '@/features/quiz-runner/api';
 import { quizApi } from '@/features/quiz-browser/api';
 import { leaderboardApi } from '@/features/leaderboard/api';
